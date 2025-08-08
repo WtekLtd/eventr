@@ -1,0 +1,63 @@
+<MudTooltip Text="@Tooltip" RootClass="@Class">
+    <MudIcon Color="@IconColor" Icon="@Icon" />
+</MudTooltip>
+
+@code {
+    [Parameter]
+    public EventStatus? Status { get; set; }
+
+    [Parameter]
+    public string DefaultIcon { get; set; } = Icons.Material.Outlined.QuestionMark;
+
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    private string Tooltip => Status switch
+    {
+        EventStatus.Sent => "Sent to Endpoint",
+        EventStatus.Received => "Processing...",
+        EventStatus.ProcessingSuccessful => "Processing Successful",
+        EventStatus.ProcessingFailed => "Processing Failed",
+        EventStatus.Published => "Received from Endpoint",
+
+        EventStatus.LoggedTrace => "TRACE",
+        EventStatus.LoggedDebug => "DEBUG",
+        EventStatus.LoggedInformation => "INFORMATION",
+        EventStatus.LoggedWarning => "WARNING",
+        EventStatus.LoggedError => "ERROR",
+        EventStatus.LoggedCritical => "CRITICAL",
+
+        _ => "Unknown Status"
+    };
+
+    private string Icon => Status switch
+    {
+        EventStatus.Sent => Icons.Material.Outlined.ArrowForward,
+        EventStatus.Received => Icons.Material.Outlined.Pending,
+        EventStatus.ProcessingSuccessful => Icons.Material.Outlined.CheckCircle,
+        EventStatus.ProcessingFailed => Icons.Material.Outlined.ErrorOutline,
+        EventStatus.Published => Icons.Material.Outlined.ArrowBack,
+
+        EventStatus.LoggedTrace => Icons.Material.Outlined.Visibility,
+        EventStatus.LoggedDebug => Icons.Material.Outlined.BugReport,
+        EventStatus.LoggedInformation => Icons.Material.Outlined.Info,
+        EventStatus.LoggedWarning => Icons.Material.Outlined.Warning,
+        EventStatus.LoggedError => Icons.Material.Outlined.ErrorOutline,
+        EventStatus.LoggedCritical => Icons.Material.Outlined.Report,
+
+        _ => DefaultIcon
+    };
+
+    private Color IconColor => Status switch
+    {
+        EventStatus.Sent => Color.Primary,
+        EventStatus.Received => Color.Primary,
+        EventStatus.ProcessingSuccessful => Color.Success,
+        EventStatus.ProcessingFailed => Color.Error,
+        EventStatus.Published => Color.Primary,
+        _ => Color.Default
+    };
+}

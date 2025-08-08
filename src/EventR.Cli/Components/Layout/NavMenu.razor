@@ -1,0 +1,172 @@
+﻿@using EventR.Cli.Requests.Commands.RegisterEndpoint
+@using EventR.Cli.Requests.Queries.GetEndpoints
+@using EventR.Cli.Requests.Queries.GetSavedEvents
+@using EventR.Cli.Messages
+@using EventR.Cli.Services
+@using EventR.Cli.DTOs
+
+@implements IDisposable;
+
+@inject IRequestDispatcher RequestDispatcher
+@inject IMessengerService MessengerService
+@inject NavigationManager NavigationManager
+
+<MudNavMenu>
+    <MudNavGroup Title="Endpoints" Expanded="true" HideExpandIcon="true">
+        @foreach (var endpoint in _endpoints)
+        {
+            <MudNavLink
+                Href="@($"/endpoints/{endpoint.Identifier}")"
+                Match="NavLinkMatch.All"
+                Icon="@endpoint.Icon"
+                IconColor="@endpoint.IconColor">
+                @endpoint.Name
+            </MudNavLink>
+        }
+        <MudDivider />
+        <MudNavLink
+            Href="/endpoints"
+            Match="NavLinkMatch.All"
+            Icon="@Icons.Material.Filled.SelectAll">
+            All Endpoints
+        </MudNavLink>
+        <MudDivider />
+
+    </MudNavGroup>
+    <MudNavGroup Title="Saved Events" Expanded="true" HideExpandIcon="true">
+        @foreach (var location in Locations)
+        {
+            <MudNavGroup
+                Icon="@Icons.Material.Outlined.Folder"
+                Expanded="false"
+                Title="@location.Name">
+                @foreach (var evnt in location.SavedEvents)
+                {
+                    <MudNavLink
+                        Href="@("/events/saved/" + evnt.Identifier)"
+                        Match="NavLinkMatch.All"
+                        Icon="@Icons.Material.Outlined.Mail">
+                        @evnt.Name
+                    </MudNavLink>
+                }
+            </MudNavGroup>
+        }
+        <MudDivider />
+        <MudNavLink
+            Href="/events"
+            Match="NavLinkMatch.All"
+            Icon="@Icons.Material.Filled.Add">
+            New Event
+        </MudNavLink>
+        <MudDivider />
+    </MudNavGroup>
+</MudNavMenu>
+
+@code {
+    private IEnumerable<EndpointViewModel> _endpoints = [];
+
+    private IEnumerable<SavedEventDto> _events = [];
+
+    private IEnumerable<SavedEventLocationViewModel> Locations => _events
+        .GroupBy(e => new { e.LocationIdentifier, e.LocationName })
+        .Select(g => new SavedEventLocationViewModel(g.Key.LocationIdentifier, g.Key.LocationName, g));
+
+    protected override void OnInitialized()
+    {
+        var endpoints = RequestDispatcher.DispatchQuery(new GetEndpointsQuery());
+        _endpoints = endpoints.Select(endpoint => new EndpointViewModel(endpoint)).ToList();
+        _events = RequestDispatcher.DispatchQuery(new GetSavedEventsQuery());
+
+        MessengerService.Subscribe<EventSavedMessage>(OnEventSaved);
+        MessengerService.Subscribe<EventLoadedMessage>(OnEventLoaded);
+        MessengerService.Subscribe<EventDeletedMessage>(OnEventDeleted);
+        MessengerService.Subscribe<EndpointStatusChangedMessage>(OnEndpointStatusChanged);
+        MessengerService.Subscribe<EndpointRegisteredMessage>(OnEndpointRegistered);
+    }
+
+    public void Dispose()
+    {
+        MessengerService.Unsubscribe<EventSavedMessage>(OnEventSaved);
+        MessengerService.Unsubscribe<EventLoadedMessage>(OnEventLoaded);
+        MessengerService.Unsubscribe<EventDeletedMessage>(OnEventDeleted);
+        MessengerService.Unsubscribe<EndpointStatusChangedMessage>(OnEndpointStatusChanged);
+        MessengerService.Unsubscribe<EndpointRegisteredMessage>(OnEndpointRegistered);
+    }
+
+    private void OnEventSaved(EventSavedMessage message)
+    {
+        ImportSavedEvent(message.SavedEvent);
+        NavigationManager.NavigateTo($"/events/saved/{message.SavedEvent.Identifier}");
+    }
+
+    private void OnEventLoaded(EventLoadedMessage message)
+    {
+        ImportSavedEvent(message.SavedEvent);
+    }
+
+    private void OnEventDeleted(EventDeletedMessage message)
+    {
+        _events = [
+            .._events.Where(e => e.Identifier != message.EventIdentifier)
+        ];
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnEndpointStatusChanged(EndpointStatusChangedMessage args)
+    {
+        var endpoint = _endpoints.FirstOrDefault(ep => ep.Identifier == args.EndpointIdentifier);
+        if (endpoint?.Status != args.Status)
+        {
+            endpoint!.Status = args.Status;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnEndpointRegistered(EndpointRegisteredMessage message)
+    {
+        _endpoints = [
+            .._endpoints.Where(e => e.Identifier != message.Endpoint.Identifier),
+            new(message.Endpoint)
+        ];
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ImportSavedEvent(SavedEventDto savedEvent)
+    {
+        _events = [
+            .._events.Where(e => e.Identifier != savedEvent.Identifier),
+            savedEvent
+        ];
+        InvokeAsync(StateHasChanged);
+    }
+
+    public class SavedEventLocationViewModel(string identifier, string name, IEnumerable<SavedEventDto> savedEvents)
+    {
+        public string Identifier { get; } = identifier;
+
+        public string Name { get; } = name;
+
+        public IEnumerable<SavedEventDto> SavedEvents { get; } = savedEvents;
+    }
+
+    public class EndpointViewModel(EndpointDto endpoint)
+    {
+        public string Identifier { get; } = endpoint.Identifier;
+
+        public string Name { get; } = endpoint.Name;
+
+        public EndpointStatus Status { get; set; } = endpoint.Status;
+
+        public string Icon => Status switch {
+            EndpointStatus.Running => Icons.Material.Outlined.PlayCircle,
+            EndpointStatus.Stopped => Icons.Material.Outlined.Cancel,
+            _ => Icons.Material.Outlined.QuestionMark
+        };
+
+        public Color IconColor => Status switch {
+            EndpointStatus.Running => Color.Success,
+            EndpointStatus.Stopped => Color.Error,
+            _ => Color.Default
+        };
+    }
+}

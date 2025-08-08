@@ -1,0 +1,24 @@
+<MudDialog>
+    <DialogContent>
+        <MudText>Do you really want to delete this event? This process cannot be undone.</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="Delete">Delete</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance? MudDialogInstance { get; set; }
+
+    private void Cancel()
+    {
+        MudDialogInstance?.Close(false);
+    }
+
+    private void Delete()
+    {
+        MudDialogInstance?.Close(true);
+    }
+}

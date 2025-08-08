@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageOutputPath>../../nupkg</PackageOutputPath>
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>eventr</ToolCommandName>
+
+    <PackageId>EventR.Cli</PackageId>
+    <Description>CLI for the eventr platform.</Description>
+    <Version>0.2.0</Version>
+    <Authors>Wtek</Authors>
+    <Company>Wtek Ltd</Company>
+    <Copyright>Copyright 2025 Wtek Ltd</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>Event;Debugging;Orchestration</PackageTags>
+    <RepositoryUrl>https://github.com/WtekLtd/eventr.git</RepositoryUrl>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ToolsPackagePath>tools/$(TargetFramework)/any</ToolsPackagePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Amazon.Lambda.Core" Version="2.6.0" />
+    <PackageReference Include="BlazorMonaco" Version="3.3.0" />
+    <PackageReference Include="Brism" Version="1.0.1" />
+    <PackageReference Include="JsonPointer.Net" Version="5.3.1" />
+    <PackageReference Include="MudBlazor" Version="8.6.0" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../EventR.Cli.Interface/EventR.Cli.Interface.csproj" >
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>none</IncludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="../EventR/EventR.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(OutputPath)/EventR.Cli.staticwebassets.endpoints.json" Pack="true" PackagePath="$(ToolsPackagePath)"/>
+    <None Include="$(PublishDir)/wwwroot/**/*.*" Pack="true" PackagePath="content/wwwroot" />
+    <None Include="../../README.md" Pack="true" PackagePath="/"/>
+  </ItemGroup>
+
+  <Target Name="PublishStaticWebAssets" AfterTargets="Build" DependsOnTargets="Publish">
+  </Target>
+
+</Project>

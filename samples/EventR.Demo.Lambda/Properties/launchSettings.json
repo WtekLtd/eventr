@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  
+  "profiles": {
+    "EventR": {
+      "commandName": "Executable",
+      "commandLineArgs": "eventr-lambda-launcher --port 5050 --name \"Demo Lambda\" $(TargetPath)",
+      "executablePath": "dotnet",
+      "workingDirectory": "$(ProjectDir)",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

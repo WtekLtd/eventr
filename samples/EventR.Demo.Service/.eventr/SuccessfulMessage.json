@@ -1,0 +1,7 @@
+{
+    "detail-type": "SuccessfulMessage",
+    "detail": {
+        "isSuccess": true,
+        "message": "Completed successfully"
+    }
+}

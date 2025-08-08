@@ -1,0 +1,19 @@
+{
+    "Records": [{
+        "MessageId": "cb37b389-2923-45b7-92ff-df459ce89526",
+        "ReceiptHandle": "AQEB0a80neddLzbvFCg3tmVubDaj6wxxogHGj8IV/bgnRWM6/NpiqLpChv+5YQFzkfHc9AakgN1nnrxBws3F9+UqTN40Ayr7BgYPFFXglExAxBLnERxBsPi8nBRKIsNanJdV1ID20NeuXZv1ptrinMVtIe0/0aqdxG5L28kCg1BVTNzQS107kP7bshWTf+F+wj8qxKSnNfp87N9Kr+k9t2L/xY2gl9x+0cOQApzR9IC+QZTAOJPW6DT1tX1p8jokRw+cPzwBPHn5jMAK6wbwQ3WV6NkQ0Mk2cBl5EN2xQrCMR6t7KkPnU+qLqN3m+XTi1AKIStKLS5ODju2PlcAcKxtjSXDM3bHPuEw70eCKO/GdR7irWY3j3yN+mmVGywPVHJRr",
+        "Body": "{ \"firstName\": \"Santa\", \"lastName\": \"Claus\" }",
+        "Md5OfBody": "25f1478d277697f0c963741c0857f34b",
+        "Md5OfMessageAttributes": null,
+        "EventSourceArn": "arn:aws:sqs:us-east-1:012345678910:demo-queue",
+        "EventSource": "aws:sqs",
+        "AwsRegion": "us-east-1",
+        "Attributes": {
+            "ApproximateReceiveCount": "1",
+            "SentTimestamp": "1587379397385",
+            "SenderId": "AIDA5ONR45AYSCULMW46P",
+            "ApproximateFirstReceiveTimestamp": "1587379397405"
+        },
+        "MessageAttributes": {}
+    }]
+}

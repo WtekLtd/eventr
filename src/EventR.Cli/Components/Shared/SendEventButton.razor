@@ -1,0 +1,66 @@
+@using System.Text.Json;
+@using EventR.Cli.Requests.Commands.PublishEndpointEvent
+
+@inject IDialogService DialogService
+@inject IRequestDispatcher RequestDispatcher
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<MudTooltip Text="Send Event to Endpoint">
+    <MudIconButton Icon="@Icons.Material.Outlined.Send" Disabled="@Disabled" OnClick="@OnClickAsync" />
+</MudTooltip>
+
+@code {
+    [Parameter]
+    public string? Data { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public string? InitialEndpointIdentifier { get; set; }
+
+    private async Task OnClickAsync()
+    {
+        if (Data == null)
+        {
+            return;
+        }
+
+        try
+        {
+            var dataDocument = JsonDocument.Parse(Data);
+
+            var options = new DialogOptions
+            {
+                FullWidth = true
+            };
+            var parameters = new DialogParameters<SubmitEventDialog>
+            {
+                { x => x.InitialEndpointIdentifier, InitialEndpointIdentifier }
+            };
+            var dialogRef = await DialogService.ShowAsync<SubmitEventDialog>("Send Event to Endpoint", options);
+            var result = await dialogRef.GetReturnValueAsync<EndpointDto>();
+
+            if (result != null)
+            {
+                RequestDispatcher.DispatchCommand(new PublishEndpointEventCommand
+                {
+                    EndpointIdentifier = result.Identifier,
+                    Data = Data,
+                    Message = null,
+                    Status = EventStatus.Sent
+                });
+                Snackbar.Add($"Event sent to {result.Name}.", Severity.Success, (opt) =>
+                {
+                    opt.Icon = Icons.Material.Outlined.Send;
+                });
+                NavigationManager.NavigateTo($"/endpoints/{result.Identifier}");
+            }
+        }
+        catch
+        {
+
+        }
+    }
+}

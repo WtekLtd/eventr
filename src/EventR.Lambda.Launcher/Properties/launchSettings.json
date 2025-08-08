@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  
+  "profiles": {
+    "EventR": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 5050 --name \"Demo Service\" $(ProjectDir)/../../samples/EventR.Demo.Lambda/bin/Debug/net8.0/EventR.Demo.Service.dll",
+      "workingDirectory": "$(ProjectDir)/../../samples/EventR.Demo.Lambda",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

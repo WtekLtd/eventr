@@ -1,0 +1,1 @@
+dotnet build ./EventR.sln -c Release

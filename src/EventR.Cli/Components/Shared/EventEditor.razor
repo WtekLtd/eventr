@@ -1,0 +1,93 @@
+@using System.Text.Json
+@using Json.More
+
+<MudPaper Class="@(CssClass + " d-flex flex-column")" Style="height: 100%">
+    @if (_jsonError != null)
+    {
+        <MudAlert Severity="Severity.Error">@_jsonError</MudAlert>
+    }
+    <StandaloneCodeEditor
+        @ref="_eventEditorRef"
+        CssClass="flex-1"
+        ConstructionOptions="GetEditorConstructorOptions"
+        OnDidChangeModelContent="@((e) => OnDidChangeModelContent())" />
+</MudPaper>
+
+@code {
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [Parameter]
+    public string? JsonData { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> JsonDataChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnValidated { get; set; }
+
+    private StandaloneCodeEditor? _eventEditorRef;
+
+    private string? _jsonError;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_eventEditorRef == null)
+        {
+            return;
+        }
+
+        var currentValue = await _eventEditorRef.GetValue();
+        var newValue = JsonData;
+        if (currentValue != newValue)
+        {
+            await _eventEditorRef.SetValue(newValue);
+            await ValidateJsonDataAsync(newValue);
+        }
+    }
+
+    private StandaloneEditorConstructionOptions GetEditorConstructorOptions(StandaloneCodeEditor codeEditor) => new()
+    {
+        AutomaticLayout = true,
+        Language = "json",
+        Value = JsonData,
+        ScrollBeyondLastLine = false,
+        Minimap = new()
+        {
+            Enabled = false
+        }
+    };
+
+    private async Task OnDidChangeModelContent()
+    {
+        if (_eventEditorRef == null) 
+        {
+            return;
+        }
+
+        var model = await _eventEditorRef.GetModel();
+        JsonData = await model.GetValue(EndOfLinePreference.TextDefined, true);
+        await JsonDataChanged.InvokeAsync(JsonData);
+        
+        await ValidateJsonDataAsync(JsonData);
+    }
+
+    private async Task ValidateJsonDataAsync(string? jsonData)
+    {
+        bool isValid = false;
+        if (jsonData != null)
+        {
+            try
+            {
+                JsonDocument.Parse(jsonData);
+                _jsonError = null;
+                isValid = true;
+            }
+            catch (JsonException e)
+            {
+                _jsonError = e.Message;
+            }
+        }
+        await OnValidated.InvokeAsync(isValid);
+    }
+}

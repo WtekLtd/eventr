@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OutputType>exe</OutputType>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageOutputPath>../../nupkg</PackageOutputPath>
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>eventr-lambda-launcher</ToolCommandName>
+    
+    <PackageId>EventR.Lambda.Launcher</PackageId>
+    <Description>Launcher for the eventr platform</Description>
+    <Version>0.2.0</Version>
+    <Authors>Wtek</Authors>
+    <Company>Wtek Ltd</Company>
+    <Copyright>Copyright 2025 Wtek Ltd</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>Event;Debugging;Orchestration;AWS;Lambda</PackageTags>
+    <RepositoryUrl>https://github.com/WtekLtd/eventr.git</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Amazon.Lambda.Core" Version="2.6.0" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="[8.0.0, )" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../EventR.Cli.Interface/EventR.Cli.Interface.csproj" >
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>none</IncludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="../EventR.Transports.Development/EventR.Transports.Development.csproj" />
+    <ProjectReference Include="../EventR/EventR.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../docs/lambda-quick-start.md" Pack="true" PackagePath="/README.md" />
+  </ItemGroup>
+
+</Project>

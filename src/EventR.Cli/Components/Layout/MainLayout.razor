@@ -1,0 +1,35 @@
+﻿@inherits LayoutComponentBase
+
+@inject IWebHostEnvironment Environment
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudBreakpointProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIcon Class="mr-4" Icon="@_eventRIcon" Size="Size.Large"/>
+        <MudText Typo="Typo.h5">
+            EventR
+        </MudText>
+    </MudAppBar>
+    <MudDrawer Open="true" Variant="DrawerVariant.Persistent" ClipMode="DrawerClipMode.Always" Elevation="2">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent Style="height: 100vh">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private string _eventRIcon = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var webRootPath = Environment.WebRootPath ?? "wwwroot";
+        var iconPath = Path.Combine(webRootPath, "eventr.svg");
+        _eventRIcon = await File.ReadAllTextAsync(iconPath);
+    }
+}

@@ -1,0 +1,50 @@
+@using EventR.Cli.Requests.Commands.SaveEventAs
+
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@inject IRequestDispatcher RequestDispatcher
+@inject ISnackbar Snackbar
+
+<MudTooltip Text="Save Event As">
+    <MudIconButton Icon="@Icons.Material.Outlined.SaveAs" OnClick="@OnClickAsync" Disabled="@Disabled"/>
+</MudTooltip>
+
+@code {
+    [Parameter]
+    public string? Data { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    private async Task OnClickAsync()
+    {
+        if (Data == null)
+        {
+            return;
+        }
+
+        var options = new DialogOptions
+        {
+            FullWidth = true
+        };
+        var parameters = new DialogParameters<SaveEventDialog>
+        {
+            { dialog => dialog.InitialName, string.Empty }
+        };
+        var response = await DialogService.ShowAsync<SaveEventDialog>("Save Event", parameters, options);
+        var savedEventResponse = await response.GetReturnValueAsync<SaveEventDialog.SaveEventDialogResponse>();
+        if (savedEventResponse != null)
+        {
+            RequestDispatcher.DispatchCommand(new SaveEventAsCommand
+            {
+                LocationIdentifier = savedEventResponse.LocationIdentifier,
+                Name = savedEventResponse.Name,
+                Data = Data
+            });
+            Snackbar.Add($"Event saved as {savedEventResponse.Name}.", Severity.Success, (opt) => 
+            {
+                opt.Icon = Icons.Material.Outlined.SaveAs;
+            });
+        }
+    }
+}

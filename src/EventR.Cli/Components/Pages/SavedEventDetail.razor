@@ -1,0 +1,115 @@
+@page "/events/saved/{eventIdentifier}"
+
+@using EventR.Cli.Components.Dialogs
+@using EventR.Cli.Components.Shared
+@using EventR.Cli.DTOs
+@using EventR.Cli.Requests.Commands.DeleteEvent
+@using EventR.Cli.Requests.Commands.SaveEvent
+@using EventR.Cli.Requests.Queries.GetSavedEvent
+@using EventR.Cli.Services
+@using System.Text.Json
+@using System.Text.Json.Nodes
+
+@inject IRequestDispatcher RequestDispatcher
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<PageTitle>Saved Event</PageTitle>
+
+<MudPaper Class="d-flex flex-column" Style="height: 100%">
+    <MudToolBar>
+        <MudBadge Dot="true" Color="Color.Info" Visible="ChangesMade">
+            <MudText Typo="Typo.h6">
+                @_savedName
+            </MudText>
+        </MudBadge>
+        <MudSpacer />
+        <MudTooltip Text="Delete Event">
+            <MudIconButton Icon="@Icons.Material.Outlined.Delete" OnClick="DeleteAsync" />
+        </MudTooltip>
+        <MudTooltip Text="Save Event">
+            <MudIconButton Icon="@Icons.Material.Outlined.Save" OnClick="Save" Disabled="!CanSave" />
+        </MudTooltip>
+        <SaveAsButton Data="@_data" Disabled="@(!CanSaveAs)" />
+        <SendEventButton Data="@_data" Disabled="@(!CanSend)" />
+    </MudToolBar>
+    <EventEditor CssClass="flex-1" @bind-JsonData="_data" OnValidated="OnDataValidated" />
+</MudPaper>
+
+@code {
+    [Parameter]
+    public string EventIdentifier { get; set; } = null!;
+
+    private string? _savedName;
+
+    private string? _savedLocationIdentifier;
+
+    private string? _data;
+
+    private bool _isDataValid = true;
+
+    private string? _originalData;
+
+    private bool ChangesMade => _data != _originalData;
+
+    private bool CanSave => ChangesMade && _isDataValid;
+
+    private bool CanSaveAs => _isDataValid;
+
+    private bool CanSend => _isDataValid;
+
+    protected override void OnParametersSet()
+    {
+        if (EventIdentifier != null)
+        {
+            var evnt = RequestDispatcher.DispatchQuery(new GetSavedEventQuery { SavedEventIdentifier = EventIdentifier });
+            _originalData = _data = evnt?.Data;
+            _savedName = evnt?.Name;
+            _savedLocationIdentifier = evnt?.LocationIdentifier;
+        }
+    }
+
+    private void OnDataValidated(bool isValid)
+    {
+        _isDataValid = isValid;
+    }
+
+    private async Task DeleteAsync()
+    {
+        var response = await DialogService.ShowAsync<DeleteEventDialog>("Delete Event");
+        var savedEventResponse = await response.GetReturnValueAsync<bool>();
+        if (savedEventResponse)
+        {
+            RequestDispatcher.DispatchCommand(new DeleteEventCommand
+            {
+                EventIdentifier = EventIdentifier
+            });
+            Snackbar.Add($"Event {_savedName} deleted.", Severity.Success, (opt) =>
+            {
+                opt.Icon = Icons.Material.Outlined.Delete;
+            });
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private void Save()
+    {
+        if (_data == null)
+        {
+            return;
+        }
+
+        RequestDispatcher.DispatchCommand(new SaveEventCommand
+        {
+            EventIdentifier = EventIdentifier,
+            Data = _data
+        });
+        _originalData = _data;
+
+        Snackbar.Add($"Event {_savedName} saved.", Severity.Success, (opt) =>
+        {
+            opt.Icon = Icons.Material.Outlined.Save;
+        });
+    }
+}

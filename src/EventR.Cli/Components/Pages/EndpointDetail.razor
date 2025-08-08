@@ -1,0 +1,201 @@
+@page "/"
+@page "/Endpoints/{endpointIdentifier?}"
+
+@implements IDisposable
+
+@using EventR.Cli.Components.Dialogs
+@using EventR.Cli.Messages
+@using EventR.Cli.Requests.Commands.ClearEndpointEvents
+@using EventR.Cli.Requests.Queries.GetEndpoint
+@using EventR.Cli.Requests.Queries.GetEndpointEvents
+@using EventR.Cli.Requests.Queries.GetEndpointEventsForEndpoint
+@using EventR.Cli.Services
+@using EventR.Cli.DTOs
+@using System.Text.Json.Nodes
+@using Json.Pointer
+@using System.Collections.Concurrent;
+
+@inject IRequestDispatcher RequestDispatcher;
+@inject IMessengerService MessengerService;
+@inject NavigationManager NavigationManager;
+@inject IDialogService DialogService;
+
+<PageTitle>Endpoint Detail</PageTitle>
+
+<MudDataGrid T="EndpointEventViewModel" Items="@_events" Dense="true" RowStyleFunc="GetRowStyle">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Outlined.Cancel" OnClick="@((e) => ClearEndpointEvents())" />
+    </ToolBarContent>
+    <Columns>
+        <HierarchyColumn HeaderStyle="width: 64px" />
+        <TemplateColumn Title="Status" HeaderStyle="width: 96px">
+            <CellTemplate>
+                <EventStatusIcon Class="d-flex justify-center align-center" Status="@context.Item.Status" Message="@context.Item.Message" />
+            </CellTemplate>
+        </TemplateColumn>
+        @if (_endpoint == null)
+        {
+            <TemplateColumn Title="Endpoint">
+                <CellTemplate>
+                    <MudText>@context.Item.EndpointName</MudText>
+                </CellTemplate>
+            </TemplateColumn>
+        }
+        <TemplateColumn Title="Time" InitialDirection="SortDirection.Descending" SortBy="(x) => x.DateTime">
+            <CellTemplate>
+                <MudText>@context.Item.DateTime</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Message">
+            <CellTemplate>
+                <MudText>@context.Item.Message</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        @if (_endpoint != null)
+        {
+            @foreach (var column in _endpoint.Columns)
+            {
+                <TemplateColumn Title="@(column.Title)">
+                    <CellTemplate>
+                        <MudText>@(context.Item.GetDataProperty(column.Pointer))</MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+            }
+        }
+    </Columns>
+    <ChildRowContent>
+        <MudPaper Class="relative">
+            <CodeBlock Code="@context.Item.FormattedData" Language="CodeLanguage.Json" EnableLineNumbers="false" />
+            @if (context.Item.Status < EventStatus.LoggedTrace)
+            {
+                <MudStack Row Class="absolute" Style="bottom: 8px; right: 8px">
+                    <MudTooltip Text="Edit Event">
+                        <MudIconButton Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => OnEditEvent(context.Item))" />
+                    </MudTooltip>
+                    <SaveAsButton Data="@context.Item.FormattedData" />
+                    <SendEventButton Data="@context.Item.Data" InitialEndpointIdentifier="@EndpointIdentifier" />
+                </MudStack>
+            }
+        </MudPaper>
+    </ChildRowContent>
+</MudDataGrid>
+<MudFab
+    Class="fixed ma-8"
+    Style="bottom: 0; right: 0"
+    StartIcon="@Icons.Material.Filled.Add"
+    Color="Color.Secondary"
+    OnClick="@((e) => NavigateToNewEvent())"/>
+
+@code {
+    [Parameter]
+    public string? EndpointIdentifier { get; set; }
+
+    private ConcurrentBag<EndpointEventViewModel>? _events;
+
+    private EndpointDto? _endpoint;
+
+    private MudTheme _theme = new();
+
+    private string Title => _endpoint?.Name ?? "All Endpoints";
+
+    protected override void OnParametersSet()
+    {
+        IEnumerable<EndpointEventDto> endpointEvents;
+        if (EndpointIdentifier != null)
+        {
+            endpointEvents = RequestDispatcher
+                .DispatchQuery(new GetEndpointEventsForEndpointQuery
+                {
+                    EndpointIdentifier = EndpointIdentifier
+                })
+                .OrderByDescending(epe => epe.DateTime);
+            _endpoint = RequestDispatcher
+                .DispatchQuery(new GetEndpointQuery() 
+                {
+                    EndpointIdentifier = EndpointIdentifier
+                });
+        }
+        else
+        {
+            endpointEvents = RequestDispatcher
+                .DispatchQuery(new GetEndpointEventsQuery());
+            _endpoint = null;
+        }
+        _events = [..endpointEvents.Select(dto => new EndpointEventViewModel(dto))];
+
+        MessengerService.Subscribe<EventPublishedMessage>(OnEventPublished);
+        MessengerService.Subscribe<EventsClearedMessage>(OnEventsCleared);
+        MessengerService.Subscribe<EventStatusChangedMessage>(OnEventStatusChanged);
+    }
+
+    private void NavigateToEvent(string eventIdentifier)
+    {
+        NavigationManager.NavigateTo($"/events/{eventIdentifier}");
+    }
+
+    private void NavigateToNewEvent()
+    {
+        NavigationManager.NavigateTo("/events");
+    }
+
+    private void ClearEndpointEvents()
+    {
+        RequestDispatcher.DispatchCommand(new ClearEndpointEventsCommand
+        {
+            EndpointIdentifier = EndpointIdentifier
+        });
+    }
+
+    private string GetRowStyle(EndpointEventViewModel viewModel, int index)
+    {
+        if (viewModel.Status >= EventStatus.LoggedTrace)
+        {
+            return $"background-color: {_theme.PaletteLight.BackgroundGray};";
+        }
+        return "";
+    }
+
+    private void OnEventPublished(EventPublishedMessage message)
+    {
+        if (EndpointIdentifier == null || message.EndpointEvent.EndpointIdentifier == EndpointIdentifier)
+        {
+            _events?.Add(new(message.EndpointEvent));
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnEventStatusChanged(EventStatusChangedMessage message)
+    {
+        var endpointEvent = _events
+            ?.FirstOrDefault(e => e.EventIdentifier == message.EventIdentifier);
+        
+        if (endpointEvent != null)
+        {
+            endpointEvent.UpdateStatus(message.Status, message.Message);
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnEventsCleared(EventsClearedMessage message)
+    {
+        if (message.EndpointIdentifier == null || EndpointIdentifier == message.EndpointIdentifier)
+        {
+            _events?.Clear();
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnEditEvent(EndpointEventViewModel endpointEvent)
+    {
+        NavigationManager.NavigateTo($"/events/{endpointEvent.EventIdentifier}");
+    }
+
+    public void Dispose()
+    {
+        MessengerService.Unsubscribe<EventPublishedMessage>(OnEventPublished);
+        MessengerService.Unsubscribe<EventsClearedMessage>(OnEventsCleared);
+        MessengerService.Unsubscribe<EventStatusChangedMessage>(OnEventStatusChanged);
+    }
+}

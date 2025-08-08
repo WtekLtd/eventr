@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageOutputPath>../../nupkg</PackageOutputPath>
+    
+    <PackageId>EventR.Transports.Amazon.EventBridge</PackageId>
+    <Description>Transport for connecting the EventR platform to EventBridge.</Description>
+    <Version>0.2.0</Version>
+    <Authors>Wtek</Authors>
+    <Company>Wtek Ltd</Company>
+    <Copyright>Copyright 2025 Wtek Ltd</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>Event;Debugging;Orchestration;AWS;EventBridge</PackageTags>
+    <RepositoryUrl>https://github.com/WtekLtd/eventr.git</RepositoryUrl>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="../EventR/EventR.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.EventBridge" Version="4.0.2.2" />
+    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="[8.0.2, )" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="[8.0.0, )" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="[8.0.0, )" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../docs/transports/eventbridge-transport.md" Pack="true" PackagePath="/README.md" />
+  </ItemGroup>
+
+</Project>

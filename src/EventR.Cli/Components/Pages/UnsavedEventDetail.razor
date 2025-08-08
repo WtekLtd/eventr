@@ -1,0 +1,86 @@
+@page "/events/{eventIdentifier?}"
+
+@using EventR.Cli.Components.Dialogs
+@using EventR.Cli.Components.Shared
+@using EventR.Cli.DTOs
+@using EventR.Cli.Requests.Commands.SaveEventAs
+@using EventR.Cli.Requests.Queries.GetEndpoint
+@using EventR.Cli.Requests.Queries.GetEndpointEvent
+@using EventR.Cli.Services
+@using System.Text.Json
+@using System.Text.Json.Nodes
+
+@inject IRequestDispatcher RequestDispatcher;
+@inject IDialogService DialogService;
+@inject NavigationManager NavigationManager
+
+<PageTitle>Unsaved Event</PageTitle>
+
+<MudPaper Class="d-flex flex-column" Style="height: 100%">
+    <MudToolBar >
+        <EventStatusIcon Status="@_status" Message="@_statusMessage" DefaultIcon="@Icons.Material.Outlined.Create" />
+        <MudText Class="ml-4" Typo="Typo.h6">
+            @Title
+        </MudText>
+        <MudSpacer />
+        <SaveAsButton Data="@_data" />
+        <SendEventButton Data="@_data" />
+    </MudToolBar>
+    <EventEditor CssClass="flex-1" @bind-JsonData="_data" OnValidated="OnDataValidated"/>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public string? EventIdentifier { get; set; } = null!;
+
+    private string? _data;
+
+    private string? _endpointName;
+
+    private EventStatus? _status;
+
+    private string? _statusMessage;
+
+    private DateTime? _date;
+
+    private bool _isDataValid;
+
+    private string Title => _date != null ? $"{_endpointName} @ {_date?.ToLongTimeString()}" : "New Event";
+
+    protected override void OnParametersSet()
+    {
+        if (EventIdentifier != null)
+        {
+            var evnt = RequestDispatcher.DispatchQuery(new GetEndpointEventQuery
+            {
+                EventIdentifier = EventIdentifier
+            });
+            if (evnt != null)
+            {
+                _data = evnt.Data;
+                _status = evnt.Status;
+                _statusMessage = evnt.Message;
+                _date = evnt.DateTime;
+
+                var endpoint = RequestDispatcher.DispatchQuery(new GetEndpointQuery 
+                {
+                    EndpointIdentifier = evnt.EndpointIdentifier
+                });
+                _endpointName = endpoint?.Name;
+            }
+        }
+        else
+        {
+            _data = "{}";
+            _status = null;
+            _statusMessage = null;
+            _date = null;
+            _endpointName = null;
+        }
+    }
+
+    private void OnDataValidated(bool isValid)
+    {
+        _isDataValid = isValid;
+    }
+}

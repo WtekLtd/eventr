@@ -1,0 +1,7 @@
+{
+    "detail-type": "FailureMessage",
+    "detail": {
+        "isSuccess": false,
+        "message": "Something has gone wrong."
+    }
+}
